@@ -14,10 +14,27 @@ def _read_text(path: str) -> str | None:
         return None
 
 
+def board_serial() -> str | None:
+    for path in (
+        "/sys/firmware/devicetree/base/serial-number",
+        "/proc/device-tree/serial-number",
+    ):
+        value = _read_text(path)
+        if value:
+            return value.strip("\x00").strip() or None
+    cpuinfo = _read_text("/proc/cpuinfo") or ""
+    for line in cpuinfo.splitlines():
+        key, separator, value = line.partition(":")
+        if separator and key.strip().casefold() == "serial":
+            return value.strip() or None
+    return None
+
+
 def system_metadata() -> dict[str, Any]:
     model = _read_text("/proc/device-tree/model")
     return {
         "hostname": socket.gethostname(),
+        "serial": board_serial(),
         "model": model.rstrip("\x00") if model else platform.machine(),
         "platform": platform.platform(),
         "python": platform.python_version(),
@@ -40,4 +57,3 @@ def system_telemetry() -> dict[str, Any]:
         "memory_available_bytes": mem_values.get("MemAvailable"),
         "temperature_c": round(int(temperature) / 1000, 1) if temperature else None,
     }
-

@@ -32,6 +32,10 @@ class PinCommand(BaseModel):
     pull: Literal["up", "down", "floating"] = "floating"
 
 
+class NodeName(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+
+
 def create_app(settings: ServerSettings | None = None) -> FastAPI:
     settings = settings or ServerSettings.from_env()
     manager = NodeManager()
@@ -83,16 +87,45 @@ def create_app(settings: ServerSettings | None = None) -> FastAPI:
     async def public_settings() -> dict[str, Any]:
         return {"auth_mode": settings.auth_mode}
 
+    def node_payloads() -> list[dict[str, Any]]:
+        result = []
+        for node in manager.list_nodes():
+            payload = dict(node)
+            payload["name"] = store.get_node_name(node["node_id"]) or "Pi"
+            result.append(payload)
+        return result
+
     @app.get("/api/v1/nodes", tags=["nodes"])
     async def list_nodes() -> dict[str, Any]:
-        return {"nodes": manager.list_nodes()}
+        return {"nodes": node_payloads()}
 
     @app.get("/api/v1/nodes/{node_id}", tags=["nodes"])
     async def get_node(node_id: str) -> dict[str, Any]:
-        node = next((item for item in manager.list_nodes() if item["node_id"] == node_id), None)
+        node = next((item for item in node_payloads() if item["node_id"] == node_id), None)
         if not node:
             raise HTTPException(status_code=404, detail="Unknown node")
         return node
+
+    @app.post("/api/v1/nodes/{node_id}/name", tags=["nodes"])
+    async def rename_node(
+        node_id: str,
+        body: NodeName,
+        actor: str = Depends(require_api_key),
+    ) -> dict[str, Any]:
+        if not any(node["node_id"] == node_id for node in manager.list_nodes()):
+            raise HTTPException(status_code=404, detail="Unknown node")
+        name = body.name.strip()
+        if not name:
+            raise HTTPException(status_code=422, detail="name cannot be blank")
+        previous_name = store.get_node_name(node_id) or "Pi"
+        store.set_node_name(node_id, name)
+        store.add(
+            node_id,
+            "node_renamed",
+            {"previous_name": previous_name, "name": name},
+            actor,
+        )
+        return {"node_id": node_id, "name": name}
 
     @app.post("/api/v1/nodes/{node_id}/pins/{pin_name}", tags=["control"])
     async def control_pin(

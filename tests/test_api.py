@@ -57,6 +57,16 @@ def test_node_websocket_uses_token_header(tmp_path: Path) -> None:
             response = client.get("/api/v1/nodes/test-node")
             assert response.status_code == 200
             assert response.json()["metadata"]["hostname"] == "test-pi"
+            assert response.json()["name"] == "Pi"
+
+            renamed = client.post(
+                "/api/v1/nodes/test-node/name",
+                json={"name": "Bench Pi"},
+                headers={"X-API-Key": "test-api-key"},
+            )
+            assert renamed.status_code == 200
+            assert renamed.json()["name"] == "Bench Pi"
+            assert client.get("/api/v1/nodes/test-node").json()["name"] == "Bench Pi"
 
 
 def test_lan_mode_does_not_require_api_key(tmp_path: Path) -> None:

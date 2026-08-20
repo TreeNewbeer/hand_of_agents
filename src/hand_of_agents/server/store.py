@@ -27,6 +27,15 @@ class EventStore:
                 )
                 """
             )
+            self._connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS node_names (
+                    node_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
 
     def add(
         self,
@@ -71,3 +80,22 @@ class EventStore:
             for row in rows
         ]
 
+    def get_node_name(self, node_id: str) -> str | None:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT name FROM node_names WHERE node_id=?",
+                (node_id,),
+            ).fetchone()
+        return str(row["name"]) if row else None
+
+    def set_node_name(self, node_id: str, name: str) -> None:
+        with self._lock, self._connection:
+            self._connection.execute(
+                """
+                INSERT INTO node_names(node_id,name,updated_at) VALUES(?,?,?)
+                ON CONFLICT(node_id) DO UPDATE SET
+                    name=excluded.name,
+                    updated_at=excluded.updated_at
+                """,
+                (node_id, name, datetime.now(UTC).isoformat()),
+            )

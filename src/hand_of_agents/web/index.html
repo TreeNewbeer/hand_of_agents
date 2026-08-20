@@ -1,57 +1,50 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <title>Hand of Agents</title>
-    <link rel="stylesheet" href="/static/styles.css?v=16">
+    <link rel="stylesheet" href="/static/styles.css?v=24">
   </head>
   <body>
     <div class="shell">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">GPIO CONTROL PLANE</p>
+        <div class="brand">
           <h1>Hand of Agents</h1>
         </div>
         <div class="header-actions">
-          <span id="server-status" class="status status-waiting">正在连接</span>
-          <button id="settings-button" class="button button-quiet" type="button">认证设置</button>
+          <span id="server-status" class="status status-waiting">CONNECTING</span>
+          <button id="refresh-button" class="button" data-i18n="refreshNow" type="button">Refresh Now</button>
+          <button id="settings-button" class="button button-quiet" data-i18n="authSettings" type="button">Auth Settings</button>
+          <button id="language-button" class="button button-quiet language-button" type="button" aria-label="Switch to Chinese">ZH</button>
         </div>
       </header>
 
       <main>
-        <section class="summary" aria-label="系统摘要">
-          <article><span>节点总数</span><strong id="node-count">0</strong></article>
-          <article><span>在线节点</span><strong id="online-count">0</strong></article>
-          <article><span>在线输出</span><strong id="output-count">0</strong></article>
-          <article><span>最后刷新</span><strong id="last-refresh">—</strong></article>
-        </section>
-
-        <section class="section-heading">
-          <div>
-            <p class="eyebrow">LIVE NODES</p>
-            <h2>树莓派节点</h2>
-          </div>
-          <button id="refresh-button" class="button" type="button">立即刷新</button>
+        <section class="summary" data-i18n-aria-label="systemSummary" aria-label="System summary">
+          <article><span data-i18n="totalNodes">Total Nodes</span><strong id="node-count">0</strong></article>
+          <article><span data-i18n="onlineNodes">Online Nodes</span><strong id="online-count">0</strong></article>
+          <article><span data-i18n="activeOutputs">Active Outputs</span><strong id="output-count">0</strong></article>
+          <article><span data-i18n="lastRefresh">Last Refresh</span><strong id="last-refresh">—</strong></article>
         </section>
 
         <section id="nodes" class="nodes" aria-live="polite">
-          <div class="empty-state">尚未发现节点，等待 Client 建立连接。</div>
+          <div class="empty-state" data-i18n="noNodes">No nodes found. Waiting for a Client connection.</div>
         </section>
       </main>
     </div>
 
     <dialog id="key-dialog">
       <form method="dialog" id="key-form">
-        <p class="eyebrow">CONTROL AUTHORIZATION</p>
-        <h2>设置 Agent API 密钥</h2>
-        <p class="dialog-copy">当前局域网模式无需填写。启用 <code>HOA_AUTH_MODE=api_key</code> 后，密钥仅保存在本浏览器并通过请求头发送。</p>
-        <label for="api-key">API 密钥</label>
-        <input id="api-key" name="api-key" type="password" autocomplete="off" placeholder="输入 HOA_API_KEY">
+        <p class="eyebrow" data-i18n="controlAuthorization">CONTROL AUTHORIZATION</p>
+        <h2 data-i18n="setApiKey">Set Agent API Key</h2>
+        <p class="dialog-copy" data-i18n="apiKeyHelp">No key is needed in LAN mode. When HOA_AUTH_MODE=api_key is enabled, the key is stored only in this browser and sent in request headers.</p>
+        <label for="api-key" data-i18n="apiKey">API Key</label>
+        <input id="api-key" name="api-key" type="password" autocomplete="off" data-i18n-placeholder="apiKeyPlaceholder" placeholder="Enter HOA_API_KEY">
         <div class="dialog-actions">
-          <button class="button button-quiet" value="cancel" type="submit">取消</button>
-          <button id="save-key" class="button" value="default" type="submit">保存</button>
+          <button class="button button-quiet" data-i18n="cancel" value="cancel" type="submit">Cancel</button>
+          <button id="save-key" class="button" data-i18n="save" value="default" type="submit">Save</button>
         </div>
       </form>
     </dialog>
@@ -61,28 +54,28 @@
         <div class="pin-dialog-heading">
           <div>
             <p class="eyebrow" id="pin-physical">PHYSICAL PIN</p>
-            <h2 id="pin-dialog-title">GPIO 高级设置</h2>
+            <h2 id="pin-dialog-title">GPIO Advanced Settings</h2>
             <p class="dialog-copy" id="pin-function"></p>
           </div>
-          <button class="icon-button" value="cancel" aria-label="关闭" type="submit">×</button>
+          <button class="icon-button" value="cancel" data-i18n-aria-label="close" aria-label="Close" type="submit">×</button>
         </div>
 
         <div class="pin-config-grid">
-          <label for="pin-mode">引脚模式
+          <label for="pin-mode"><span data-i18n="pinMode">Pin Mode</span>
             <select id="pin-mode">
-              <option value="unconfigured">未占用（推荐）</option>
-              <option value="input">输入</option>
-              <option value="output">输出</option>
+              <option value="unconfigured" data-i18n="unconfiguredRecommended">Unconfigured (recommended)</option>
+              <option value="input" data-i18n="input">Input</option>
+              <option value="output" data-i18n="output">Output</option>
             </select>
           </label>
-          <label for="pin-pull">输入上下拉
+          <label for="pin-pull"><span data-i18n="inputPull">Input Pull</span>
             <select id="pin-pull">
-              <option value="floating">浮空</option>
-              <option value="up">上拉</option>
-              <option value="down">下拉</option>
+              <option value="floating" data-i18n="floating">Floating</option>
+              <option value="up" data-i18n="pullUp">Pull-up</option>
+              <option value="down" data-i18n="pullDown">Pull-down</option>
             </select>
           </label>
-          <label for="pin-pulse-hz">PULSE 频率
+          <label for="pin-pulse-hz"><span data-i18n="pulseFrequency">PULSE Frequency</span>
             <span class="input-with-unit">
               <input id="pin-pulse-hz" type="number" min="0.1" max="10" step="0.1" value="1">
               <span>Hz</span>
@@ -91,19 +84,19 @@
         </div>
 
         <div class="level-control">
-          <p>输出电平（确认后生效）</p>
+          <p data-i18n="outputLevel">Output Level (applied on confirmation)</p>
           <div class="pin-actions">
-            <button class="button button-quiet pin-level-command" data-level="high" aria-pressed="false" type="button">HIGH</button>
-            <button class="button button-quiet pin-level-command" data-level="low" aria-pressed="false" type="button">LOW</button>
-            <button class="button button-quiet pin-level-command" data-level="pulse" aria-pressed="false" type="button">连续 PULSE</button>
+            <button class="button button-quiet pin-level-command" data-level="high" data-i18n="high" aria-pressed="false" type="button">HIGH</button>
+            <button class="button button-quiet pin-level-command" data-level="low" data-i18n="low" aria-pressed="false" type="button">LOW</button>
+            <button class="button button-quiet pin-level-command" data-level="pulse" data-i18n="continuousPulse" aria-pressed="false" type="button">Continuous PULSE</button>
           </div>
         </div>
-        <p class="pin-warning">弹窗内的修改仅暂存；点击“确认”后才会提交。切换为输出时，请先确认外部电路允许所选电平。</p>
-        <button id="apply-pin-config" class="button full-button" type="button">确认</button>
+        <p class="pin-warning" data-i18n="pinWarning">Changes in this dialog are staged locally and submitted only after confirmation. Before switching to output, verify that the external circuit permits the selected level.</p>
+        <button id="apply-pin-config" class="button full-button" data-i18n="confirm" type="button">Confirm</button>
       </form>
     </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="/static/app.js?v=16"></script>
+    <script type="module" src="/static/app.js?v=25"></script>
   </body>
 </html>

@@ -22,6 +22,8 @@ Raspberry Pi Client ─── gpiozero ─── relay / sensor
 - GPIO 初始保持 `unconfigured`，网页或 API 明确配置后才会被程序申请，避免启动时抢占 I²C、SPI 和 UART 复用引脚。
 - Client 启动、断线、退出或命令脉冲结束时，输出回到各自的 `safe_state`。
 - Server 把连接与命令审计写入 SQLite，前端每 2 秒刷新节点状态。
+- 节点显示名默认为 `Pi`，可在网页中点击名称重命名；名称由 Host SQLite 持久保存，不改变内部 `node_id`、连接地址或 token。
+- Client 优先从设备树读取树莓派板级序列号，回退到 `/proc/cpuinfo` 的 `Serial`，并在设备摘要中作为只读 `id` 显示。
 
 ## 本机启动 Server
 
@@ -42,7 +44,7 @@ chmod +x scripts/*.zsh
 
 打开 `http://HOST_IP:8000/` 查看面板，OpenAPI 位于 `http://HOST_IP:8000/docs`。
 
-节点头部同时显示节点 ID 和由 Host 连接端确认的 IP 地址。排针图中的每个 GPIO 都带有独立的 `Direction`、`Level` 下拉和一键“释放”按钮；输入上下拉等完整参数通过引脚框内的“高级”按钮设置。
+节点头部以两行设备摘要显示可重命名名称、由 Host 连接端确认的 IP、板级序列号、型号及遥测信息；内部节点 ID 不在页面显示。面板默认使用英文，右上角的 `ZH`/`EN` 按钮可切换中英文，选择会保存在当前浏览器中。排针图中的每个 GPIO 都带有独立的 `Direction`、`Level` 下拉和一键“释放”按钮；输入上下拉等完整参数通过引脚框内的“高级”按钮设置。
 
 如需随桌面用户会话自动启动，可链接仓库内的 user service：
 
@@ -73,6 +75,12 @@ cp configs/pi-lab.toml.example client.toml
 ```zsh
 # 节点状态
 curl http://192.168.1.40:8000/api/v1/nodes
+
+# 修改节点显示名；pi-lab 是内部 node_id，不会随显示名改变
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bench Pi"}' \
+  http://192.168.1.40:8000/api/v1/nodes/pi-lab/name
 
 # 将 GPIO17（物理 11 脚）配置为输出；初始化为 safe_state
 curl -X POST \
@@ -108,7 +116,7 @@ curl -X POST \
 curl 'http://192.168.1.40:8000/api/v1/events?limit=50&node_id=pi-lab'
 ```
 
-`configure` 支持 `input`、`output`、`unconfigured`，输入模式的 `pull` 支持 `up`、`down`、`floating`，并可通过 `pulse_hz` 保存该引脚的 PULSE 频率（0.1–10 Hz，默认 1 Hz）。重复确认相同的 Direction/Pull 不会重新初始化 GPIO；修改运行中 PULSE 的频率会保留当前模式和电平相位。高级弹窗会同步实际配置，Direction、Pull、频率及 HIGH/LOW/PULSE 均只在本地暂存，点击“确认”后才提交。`set` 接受布尔值，`toggle` 不需要额外字段。`pulse` 接受半周期 `duration_ms`；`continuous=true` 时持续循环，默认 `false` 时仅输出一次。网页仅在“高级”设置中编辑频率，Level 控件保持显示 PULSE，而引脚状态文字和颜色显示最近采样到的实际 HIGH/LOW。节点空闲时每 2 秒更新一次，存在连续 PULSE 时自适应为 500 ms。HTTP 2xx 代表树莓派已确认执行；节点离线返回 409，超时返回 504，非法引脚或模式错误返回 422。
+节点名称接口接受 1–64 个字符，网页点击绿色名称即可重命名；`api_key` 模式下与其他写操作一样需要 `X-API-Key`。`configure` 支持 `input`、`output`、`unconfigured`，输入模式的 `pull` 支持 `up`、`down`、`floating`，并可通过 `pulse_hz` 保存该引脚的 PULSE 频率（0.1–10 Hz，默认 1 Hz）。重复确认相同的 Direction/Pull 不会重新初始化 GPIO；修改运行中 PULSE 的频率会保留当前模式和电平相位。高级弹窗会同步实际配置，Direction、Pull、频率及 HIGH/LOW/PULSE 均只在本地暂存，点击“确认”后才提交。`set` 接受布尔值，`toggle` 不需要额外字段。`pulse` 接受半周期 `duration_ms`；`continuous=true` 时持续循环，默认 `false` 时仅输出一次。网页仅在“高级”设置中编辑频率，Level 控件保持显示 PULSE，而引脚状态文字和颜色显示最近采样到的实际 HIGH/LOW。节点空闲时每 2 秒更新一次，存在连续 PULSE 时自适应为 500 ms。HTTP 2xx 代表树莓派已确认执行；节点离线返回 409，超时返回 504，非法引脚或模式错误返回 422。
 
 ## 配置参考
 
