@@ -1,0 +1,23 @@
+[Unit]
+Description=Hand of Agents Host Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hand-of-agents
+Group=hand-of-agents
+WorkingDirectory=/opt/hand-of-agents
+EnvironmentFile=/etc/hand-of-agents/server.env
+ExecStart=/opt/hand-of-agents/.venv/bin/hoa-server
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/hand-of-agents
+
+[Install]
+WantedBy=multi-user.target
+

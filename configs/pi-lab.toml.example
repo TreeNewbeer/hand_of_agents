@@ -1,0 +1,28 @@
+node_id = "pi-lab"
+server_url = "ws://192.168.1.40:8000/ws/nodes/pi-lab"
+token = "replace-with-a-long-random-node-token"
+heartbeat_seconds = 5
+telemetry_seconds = 2
+reconnect_seconds = 3
+max_pulse_ms = 10000
+gpio_backend = "auto" # auto, gpiozero, or mock
+board_profile = "raspberry-pi-40pin"
+
+# Optional overrides for individual GPIOs. The board profile exposes 26 general-purpose
+# GPIOs as unconfigured and leaves physical pins 27/28 reserved for HAT identification.
+[[pins]]
+name = "relay_1"
+bcm = 17
+physical = 11
+direction = "output"
+active_high = false
+safe_state = false
+description = "Active-low relay on BCM17"
+
+[[pins]]
+name = "door_sensor"
+bcm = 27
+physical = 13
+direction = "input"
+pull = "up" # up, down, or floating
+description = "Example dry-contact input"

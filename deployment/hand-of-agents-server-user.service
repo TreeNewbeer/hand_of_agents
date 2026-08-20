@@ -1,0 +1,17 @@
+[Unit]
+Description=Hand of Agents Host Server (user)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/hand_of_agents
+EnvironmentFile=%h/projects/hand_of_agents/.env
+ExecStart=%h/projects/hand_of_agents/.venv/bin/hoa-server
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target
+
