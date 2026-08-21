@@ -1,3 +1,5 @@
+import { createRenderGuard } from "./render-guard.js?v=1";
+
 const nodesElement = document.querySelector("#nodes");
 const toastElement = document.querySelector("#toast");
 const keyDialog = document.querySelector("#key-dialog");
@@ -221,7 +223,7 @@ function applyLanguage(rerender = true) {
   } else {
     status.textContent = t("connecting");
   }
-  if (rerender) render();
+  if (rerender) renderGuard.requestRender();
   if (pinDialog.open && selectedPin) updatePinDialogText();
 }
 
@@ -382,6 +384,11 @@ function render() {
     : `<div class="empty-state">${t("noNodes")}</div>`;
 }
 
+const renderGuard = createRenderGuard(
+  render,
+  () => document.activeElement?.classList.contains("pin-inline-select"),
+);
+
 function refreshDelayMs() {
   const hasActivePulse = nodes.some((node) => Object.values(
     node.state?.pin_behaviors ?? {},
@@ -403,14 +410,13 @@ async function loadSettings() {
 
 async function refresh() {
   const status = document.querySelector("#server-status");
-  const quickMenuActive = document.activeElement?.classList.contains("pin-inline-select");
   try {
     const response = await fetch("/api/v1/nodes", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     nodes = (await response.json()).nodes;
     status.textContent = authMode === "none" ? t("lanOnline") : t("secureOnline");
     status.className = "status status-online";
-    if (!quickMenuActive) render();
+    renderGuard.requestRender();
     if (pinDialog.open && selectedPin) updatePinDialog();
   } catch (error) {
     status.textContent = t("serverOffline");
@@ -690,6 +696,19 @@ nodesElement.addEventListener("change", (event) => {
   if (directionSelect) runDirectionAction(directionSelect);
   if (levelSelect) runLevelAction(levelSelect);
 });
+nodesElement.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0 || !event.target.closest?.("button, select")) return;
+  renderGuard.beginInteraction(`pointer:${event.pointerId}`);
+});
+nodesElement.addEventListener("keydown", (event) => {
+  if (event.repeat || !["Enter", " "].includes(event.key)) return;
+  if (!event.target.closest?.("button, select")) return;
+  renderGuard.beginInteraction(`key:${event.code}`);
+});
+nodesElement.addEventListener("focusout", (event) => {
+  if (!event.target.classList?.contains("pin-inline-select")) return;
+  window.setTimeout(() => renderGuard.flush(), 0);
+});
 nodesElement.addEventListener("click", (event) => {
   const nameButton = event.target.closest(".node-name-button");
   const releaseButton = event.target.closest(".pin-release-button");
@@ -698,6 +717,16 @@ nodesElement.addEventListener("click", (event) => {
   if (releaseButton) releasePin(releaseButton);
   if (button) openPinDialog(button);
 });
+window.addEventListener("pointerup", (event) => {
+  renderGuard.endInteraction(`pointer:${event.pointerId}`);
+}, true);
+window.addEventListener("pointercancel", (event) => {
+  renderGuard.endInteraction(`pointer:${event.pointerId}`);
+}, true);
+window.addEventListener("keyup", (event) => {
+  renderGuard.endInteraction(`key:${event.code}`);
+}, true);
+window.addEventListener("blur", () => renderGuard.cancelInteractions());
 
 applyLanguage(false);
 await loadSettings();
