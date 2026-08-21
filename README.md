@@ -2,6 +2,10 @@
 
 一个面向 Agent 的树莓派 GPIO 控制框架。Host Server 提供网页、REST/OpenAPI 和审计记录；树莓派 Client 主动连接 Server，执行经过配置白名单约束的 GPIO 命令，并持续上报节点、系统和 IO 状态。
 
+## 界面预览
+
+![Hand of Agents GPIO 控制面板](docs/assets/dashboard-preview.png)
+
 ## 架构
 
 ```text
